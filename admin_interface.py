@@ -5,8 +5,11 @@ import sqlite3
 import os
 
 def add_is_admin_column():
+    # Connect to the database
     conn = sqlite3.connect('userdata.db')
     cursor = conn.cursor()
+    
+    # Check if the 'is_admin' column exists
     try:
         cursor.execute("PRAGMA table_info(data)")
         columns = [row[1] for row in cursor.fetchall()]
@@ -21,29 +24,35 @@ def add_is_admin_column():
     finally:
         conn.close()
 
+# Run the function to add the column
 add_is_admin_column()
 
 def edit_users():
+    # Clear any previous widgets from table_frame
     for widget in table_frame.winfo_children():
         widget.destroy()
     
+    # Fetch users from database
     conn = sqlite3.connect('userdata.db')
     cursor = conn.cursor()
     cursor.execute("SELECT id, utilisateur, email, is_admin FROM data")
     users = cursor.fetchall()
     conn.close()
     
+    # Display the users in a Treeview (like a table)
     user_table = ttk.Treeview(table_frame, columns=('ID', 'Username', 'Email', 'Is Admin'), show='headings')
     user_table.heading('ID', text='ID')
     user_table.heading('Username', text='Username')
     user_table.heading('Email', text='Email')
     user_table.heading('Is Admin', text='Admin')
     
+    # Insert users into the table
     for user in users:
         user_table.insert('', END, values=user)
     
     user_table.pack(expand=True, fill='both')
     
+    # Button to toggle admin rights
     make_admin_btn = Button(table_frame, text="Toggle Admin", command=lambda: make_admin(user_table))
     make_admin_btn.pack(pady=10)
 
@@ -52,23 +61,28 @@ def make_admin(user_table):
     if selected_item:
         user_id = user_table.item(selected_item)['values'][0]
         is_admin = user_table.item(selected_item)['values'][3]
-        new_admin_status = not is_admin
+        new_admin_status = not is_admin  # Toggle admin status
         
+        # Update the database
         conn = sqlite3.connect('userdata.db')
         cursor = conn.cursor()
         cursor.execute("UPDATE data SET is_admin = ? WHERE id = ?", (new_admin_status, user_id))
         conn.commit()
         conn.close()
         
+        # Update the table display
         user_table.item(selected_item, values=(*user_table.item(selected_item)['values'][:3], new_admin_status))
         
         messagebox.showinfo('Success', f"Admin status for user ID {user_id} has been updated.")
 
 def edit_product():
+    
+    # Create a new top-level window
     edit_window = Toplevel(admin_window)
     edit_window.title("Edit Product")
     edit_window.geometry('300x200')
 
+    # Create labels and entry fields for asset details
     Label(edit_window, text="Asset Reference:").pack(pady=5)
     mat_ref_entry = Entry(edit_window)
     mat_ref_entry.pack(pady=5)
@@ -94,29 +108,41 @@ def edit_product():
             conn = sqlite3.connect('userdata.db')
             cursor = conn.cursor()
             
+            # Check if the product already exists
             cursor.execute('SELECT * FROM Mat WHERE mat_ref = ?', (mat_ref,))
             if cursor.fetchone():
+                # Update existing product
                 cursor.execute('UPDATE Mat SET mat_categ = ?, mat_Qte = ? WHERE mat_ref = ?', (mat_categ, mat_qte, mat_ref))
             else:
+                # Insert new product
                 cursor.execute('INSERT INTO Mat (mat_ref, mat_categ, mat_Qte) VALUES (?, ?, ?)', (mat_ref, mat_categ, mat_qte))
 
             conn.commit()
             conn.close()
 
             messagebox.showinfo("Success", "Product details saved.")
-            edit_window.destroy()
+            edit_window.destroy()  # Close the window after saving
         else:
             messagebox.showwarning("Input Error", "Please fill all fields correctly.")
 
+    # Save button
     save_button = Button(edit_window, text="Save", command=save_product)
     save_button.pack(pady=10)
 
+# Main window setup and other function definitions...
+
+
+
 def check_assets():
+    # Clear any previous widgets from table_frame
     for widget in table_frame.winfo_children():
         widget.destroy()
     
+    # Connect to the database
     conn = sqlite3.connect('userdata.db')
     cursor = conn.cursor()
+
+    # Query to get Mat_ID and the latest reservation details
     query = '''
     SELECT m.mat_ref, r.res_Start, r.res_End, r.user_id
     FROM Mat m
@@ -135,6 +161,7 @@ def check_assets():
     results = cursor.fetchall()
     conn.close()
     
+    # Create and configure Treeview to display the results
     tree = ttk.Treeview(table_frame, columns=('Mat_ID', 'Start Time', 'End Time', 'User ID'), show='headings')
     tree.heading('Mat_ID', text='Mat ID')
     tree.heading('Start Time', text='Start Time')
@@ -146,14 +173,18 @@ def check_assets():
     
     tree.pack(expand=True, fill='both')
 
+
 def check_lab():
+    # Clear any previous widgets from table_frame
     for widget in table_frame.winfo_children():
         widget.destroy()
 
+    # Connect to the database
     conn = sqlite3.connect('userdata.db')
     cursor = conn.cursor()
 
     try:
+        # Query to get the latest reservation for each Lab_ID
         query = '''
         SELECT l.Lab_ID, r.res_Start, r.res_End, d.utilisateur
         FROM Lab l
@@ -168,12 +199,14 @@ def check_lab():
         cursor.execute(query)
         labs = cursor.fetchall()
 
+        # Display the results in a Treeview
         lab_table = ttk.Treeview(table_frame, columns=('Lab_ID', 'Start Time', 'End Time', 'User'), show='headings')
         lab_table.heading('Lab_ID', text='Lab_ID')
         lab_table.heading('Start Time', text='Start Time')
         lab_table.heading('End Time', text='End Time')
         lab_table.heading('User', text='User')
 
+        # Insert data into the table
         for lab in labs:
             lab_table.insert('', END, values=lab)
 
@@ -182,48 +215,64 @@ def check_lab():
     finally:
         conn.close()
 
+
 def search():
     search_text = search_entry.get()
     search_type = search_combobox.get()
     print(f"Searching for '{search_text}' in '{search_type}'")
 
+# Main window
 admin_window = Tk()
 admin_window.title("Admin Interface")
-admin_window.geometry('1000x600')
+admin_window.geometry('1000x600')  # Adjusted size for better layout
 
+# Load and set the background image
 current_dir = os.path.dirname(__file__)
 image_path = os.path.join(current_dir, 'bgn.jpg')
 background = ImageTk.PhotoImage(Image.open(image_path))
 bg_label = Label(admin_window, image=background)
-bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+bg_label.place(relwidth=1, relheight=1)
 
-# Coordinates calculated to fit within the white area of the background image
+# Buttons for different admin actions
 button_frame = Frame(admin_window, bg='white')
-button_frame.place(x=350, y=120, width=300, height=350)  # Adjust these values to fit within the white area
+button_frame.grid(row=0, column=0, columnspan=4, padx=10, pady=10, sticky='ew')
 
-edit_users_btn = Button(button_frame, text="Edit users", command=edit_users)
-edit_users_btn.place(x=75, y=20, width=150, height=40)  # Adjusted positions
+edit_users_btn = Button(button_frame, text="Edit users", command=edit_users, width=20)
+edit_users_btn.grid(row=0, column=0, padx=5, pady=5, sticky='ew')
 
-edit_product_btn = Button(button_frame, text="Edit product", command=edit_product)
-edit_product_btn.place(x=75, y=70, width=150, height=40)  # Adjusted positions
+edit_product_btn = Button(button_frame, text="Edit product", command=edit_product, width=20)
+edit_product_btn.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-check_assets_btn = Button(button_frame, text="Check assets", command=check_assets)
-check_assets_btn.place(x=75, y=120, width=150, height=40)  # Adjusted positions
+check_assets_btn = Button(button_frame, text="Check Assets", command=check_assets, width=20)
+check_assets_btn.grid(row=0, column=2, padx=5, pady=5, sticky='ew')
 
-check_lab_btn = Button(button_frame, text="Check lab", command=check_lab)
-check_lab_btn.place(x=75, y=170, width=150, height=40)  # Adjusted positions
+check_lab_btn = Button(button_frame, text="Check Labo", command=check_lab, width=20)
+check_lab_btn.grid(row=0, column=3, padx=5, pady=5, sticky='ew')
 
-search_entry = Entry(button_frame)
-search_entry.place(x=25, y=220, width=200, height=30)  # Adjusted positions
+# Search section
+search_frame = Frame(admin_window, bg='white')
+search_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky='ew')
 
-search_combobox = ttk.Combobox(button_frame, values=["Users", "Products", "Assets", "Labs"])
-search_combobox.place(x=25, y=260, width=200, height=30)  # Adjusted positions
-search_combobox.current(0)
+search_entry = Entry(search_frame, width=30)
+search_entry.grid(row=0, column=0, padx=5, pady=5)
+search_entry.insert(0, "Search by name")
 
-search_button = Button(button_frame, text="Search", command=search)
-search_button.place(x=75, y=300, width=150, height=30)  # Adjusted positions
+search_combobox = ttk.Combobox(search_frame, values=["User", "Lab", "Asset"])
+search_combobox.grid(row=0, column=1, padx=5, pady=5)
+search_combobox.set("Select item")
 
-table_frame = Frame(admin_window, bg='white')
-table_frame.place(x=20, y=500, width=960, height=80)  # Adjusted positions
+search_button = Button(search_frame, text="Search", command=search)
+search_button.grid(row=0, column=2, padx=5, pady=5)
+
+# Area where the tables will be shown
+table_frame = Frame(admin_window, width=900, height=300, bg='white', relief=RIDGE, bd=2)
+table_frame.grid(row=2, column=0, columnspan=4, padx=10, pady=10, sticky='nsew')
+
+# Make sure the layout adjusts when the window is resized
+admin_window.grid_rowconfigure(2, weight=1)
+admin_window.grid_columnconfigure(0, weight=1)
+admin_window.grid_columnconfigure(1, weight=1)
+admin_window.grid_columnconfigure(2, weight=1)
+admin_window.grid_columnconfigure(3, weight=1)
 
 admin_window.mainloop()
