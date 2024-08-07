@@ -1,10 +1,14 @@
 from tkinter import *
-from tkinter import messagebox  # Import messagebox for displaying error messages
+from tkinter import messagebox
 from PIL import ImageTk
 import sqlite3
 
+# Global variable to store authenticated email
+authenticated_email = None
+
 # Functionality Part
 def validate_login():
+    global authenticated_email
     entered_email = usernameEntry.get()
     entered_password = passwordEntry.get()
 
@@ -22,20 +26,27 @@ def validate_login():
         messagebox.showerror('Erreur', 'Email ou mot de passe incorrect. Veuillez réessayer.')
     else:
         user_id, email, utilisateur, password, is_admin = result
+        authenticated_email = email  # Store the authenticated email
         
-        messagebox.showinfo('Succès', 'Connexion réussie!')
+        messagebox.showinfo('Succès', f'Connexion réussie! Votre email est: {authenticated_email}')
         login_window.destroy()
         
+        # Here, you can add functionality to open different windows based on the role
         if is_admin:
             import admin_interface  # Replace this with actual code to load admin interface
             admin_interface.show_admin_window()  # Assuming this is a function to show the admin window
         else:
-            import user_interface  # Replace this with actual code to load normal user interface
-            user_interface.show_user_window()  # Assuming this is a function to show the user window
+            import user_window  # Replace this with actual code to load normal user interface
+            user_window.show_user_window()  # Assuming this is a function to show the user window
 
-def signup_page():
-    login_window.destroy()
-    import signup  # Replace this with actual signup code
+# GUI Part
+def user_enter(event):
+    if usernameEntry.get() == 'Email':
+        usernameEntry.delete(0, END)
+
+def password_enter(event):
+    if passwordEntry.get() == 'Password':
+        passwordEntry.delete(0, END)
 
 def hide():
     eyes.config(file='closeeyes.png')
@@ -47,15 +58,10 @@ def show():
     passwordEntry.config(show='')
     eyeButton.config(command=hide)
 
-def user_enter(event):
-    if usernameEntry.get() == 'Email':
-        usernameEntry.delete(0, END)
+def signup_page():
+    login_window.destroy()
+    import signup  # Replace this with actual signup code
 
-def password_enter(event):
-    if passwordEntry.get() == 'Password':
-        passwordEntry.delete(0, END)
-
-# GUI Part
 login_window = Tk()
 login_window.geometry('990x550+50+50')
 login_window.resizable(False, False)
@@ -97,7 +103,7 @@ forgetButton.place(x=810, y=235)
 
 loginButton = Button(login_window, text='Login', font=('open Sans', 16, 'bold'), fg='white', bg='blue4',
                      activeforeground='white', activebackground='blue4', cursor='hand2', bd=0, width=25,
-                     command=validate_login)  # Updated to call validate_login function
+                     command=validate_login)
 loginButton.place(x=610, y=290)
 
 orLabel = Label(login_window, text='----------------------OR----------------------', font=('Open Sans', 16), fg='blue4', bg='white')
