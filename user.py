@@ -1,30 +1,59 @@
 from tkinter import *
 from tkinter import messagebox
+from tkcalendar import Calendar
 import sqlite3
 from datetime import datetime
 
+def update_calendar():
+    # Remove previous events
+    cal.calevent_remove('all')
+
+    conn = sqlite3.connect('userdata.db')
+    cursor = conn.cursor()
+
+    # Fetch total reservations per day
+    cursor.execute('''
+        SELECT DATE(res_Start), COUNT(DISTINCT Lab_ID) as count 
+        FROM Resrvation_Lab 
+        GROUP BY DATE(res_Start)
+    ''')
+    total_reservations = cursor.fetchall()
+
+    conn.close()
+
+    for res_date, res_count in total_reservations:
+        # Determine color based on the number of total reservations
+        if res_count == 1:
+            color = 'green'
+        elif res_count == 2:
+            color = 'blue'
+        elif res_count == 3:
+            color = 'orange'
+        elif res_count >= 4:
+            color = 'red'
+
+        # Create a unique tag for each date
+        tag_name = f"res_dot_{res_date}"
+        cal.calevent_create(datetime.strptime(res_date, '%Y-%m-%d'), '', tag_name)
+        # Set the color for the tag
+        cal.tag_config(tag_name, background=color)
+
 def book_lab():
     selected_lab_id = lab_id_var.get()
-    start_time = start_time_entry.get()
-    end_time = end_time_entry.get()
+    selected_date = cal.get_date()
+    time_slot = time_slot_var.get()
 
-    # Validate input times
-    if not selected_lab_id or not start_time or not end_time:
-        messagebox.showerror('Erreur', 'Veuillez remplir tous les champs')
+    # Determine the start and end time based on the selected time slot
+    if time_slot == "08:00 - 12:00":
+        start_time = f"{selected_date} 08:00:00"
+        end_time = f"{selected_date} 12:00:00"
+    elif time_slot == "14:00 - 18:00":
+        start_time = f"{selected_date} 14:00:00"
+        end_time = f"{selected_date} 18:00:00"
+    else:
+        messagebox.showerror('Erreur', 'Veuillez sélectionner un créneau horaire valide')
         return
 
-    try:
-        start_time = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
-        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
-    except ValueError:
-        messagebox.showerror('Erreur', 'Format de date invalide. Utilisez YYYY-MM-DD HH:MM:SS.')
-        return
-
-    if (end_time - start_time).total_seconds() != 4 * 3600:
-        messagebox.showerror('Erreur', 'La réservation doit durer exactement 4 heures.')
-        return
-
-    # Check if the reservation conflicts with existing ones
     conn = sqlite3.connect('userdata.db')
     cursor = conn.cursor()
     cursor.execute('''
@@ -39,7 +68,6 @@ def book_lab():
         messagebox.showerror('Erreur', 'Ce créneau est déjà réservé.')
         return
 
-    # Insert the reservation
     user_id = 1  # Placeholder: Get the actual user ID
     cursor.execute('''
         INSERT INTO Resrvation_Lab (Lab_ID, res_Start, res_End, user_id)
@@ -48,44 +76,69 @@ def book_lab():
     conn.commit()
     conn.close()
     messagebox.showinfo('Succès', 'Réservation réussie!')
+    update_calendar()
 
 def create_ui():
-    global lab_id_var, start_time_entry, end_time_entry
-    
+    global lab_id_var, cal, time_slot_var
+
     root = Tk()
     root.title('Réservation de Laboratoire')
-    root.geometry('400x300')
-    
+    root.geometry('600x600')  # Increased height to accommodate the legend
+
     lab_id_var = StringVar()
-    
+    time_slot_var = StringVar()
+
     Label(root, text="Choisissez le laboratoire").pack(pady=10)
-    
-    # Fetch lab options from the database
+
     conn = sqlite3.connect('userdata.db')
     cursor = conn.cursor()
     cursor.execute('SELECT Lab_ID FROM Lab')
     labs = [row[0] for row in cursor.fetchall()]
     conn.close()
-    
+
     if not labs:
         messagebox.showwarning('Avertissement', 'Aucun laboratoire disponible')
         root.destroy()
         return
-    
+
     lab_menu = OptionMenu(root, lab_id_var, *labs)
     lab_menu.pack(pady=10)
-    
-    Label(root, text="Heure de début (YYYY-MM-DD HH:MM:SS)").pack(pady=5)
-    start_time_entry = Entry(root)
-    start_time_entry.pack(pady=5)
-    
-    Label(root, text="Heure de fin (YYYY-MM-DD HH:MM:SS)").pack(pady=5)
-    end_time_entry = Entry(root)
-    end_time_entry.pack(pady=5)
-    
+    lab_menu.config(width=20)
+    Label(root, text="(Sélectionnez un laboratoire pour voir les réservations)").pack(pady=5)
+
+    Label(root, text="Choisissez la date").pack(pady=10)
+    cal = Calendar(root, selectmode='day', date_pattern='yyyy-mm-dd')
+    cal.pack(pady=10)
+
+    Label(root, text="Choisissez le créneau horaire").pack(pady=10)
+    time_slot_menu = OptionMenu(root, time_slot_var, "08:00 - 12:00", "14:00 - 18:00")
+    time_slot_menu.pack(pady=10)
+    time_slot_menu.config(width=20)
+
     book_button = Button(root, text="Réserver", command=book_lab)
     book_button.pack(pady=20)
-    
+
+    # Initial calendar update to show current reservation status
+    update_calendar()
+
+    # Add color legend
+    legend_frame = Frame(root)
+    legend_frame.pack(pady=20)
+
+    Label(legend_frame, text="Legend:").grid(row=0, column=0, sticky=W, padx=10)
+
+    colors = {
+        'green': '1 Lab Reserved',
+        'blue': '2 Labs Reserved',
+        'orange': '3 Labs Reserved',
+        'red': '4 Labs Reserved'
+    }
+
+    col = 1
+    for color, description in colors.items():
+        Label(legend_frame, text=description, bg=color, width=20).grid(row=0, column=col, pady=5, padx=10, sticky=W)
+        col += 1
+
     root.mainloop()
 
 create_ui()
