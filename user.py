@@ -3,6 +3,16 @@ from tkinter import messagebox
 from tkcalendar import Calendar
 import sqlite3
 from datetime import datetime
+import win32com.client as win32
+
+# Function to send email via Outlook
+def send_email_via_outlook(to, subject, body):
+    outlook = win32.Dispatch('outlook.application')
+    mail = outlook.CreateItem(0)
+    mail.To = to
+    mail.Subject = subject
+    mail.Body = body
+    mail.Send()
 
 def update_calendar():
     # Remove previous events
@@ -75,20 +85,33 @@ def book_lab():
     ''', (selected_lab_id, start_time, end_time, user_id))
     conn.commit()
     conn.close()
-    messagebox.showinfo('Succès', 'Réservation réussie!')
+    
+    # Fetch user's email
+    conn = sqlite3.connect('userdata.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT email FROM data WHERE user_id = ?', (user_id,))
+    user_email = cursor.fetchone()[0]
+    conn.close()
+
+    # Send email notification
+    subject = "Laboratory Booking Confirmation"
+    body = f"Dear User,\n\nYour booking for Lab ID {selected_lab_id} has been confirmed.\n\nBooking Details:\nDate: {selected_date}\nTime Slot: {time_slot}\n\nThank you!"
+    send_email_via_outlook(user_email, subject, body)
+    
+    messagebox.showinfo('Succès', 'Réservation réussie! Un email de confirmation a été envoyé.')
     update_calendar()
 
 def create_ui():
     global lab_id_var, cal, time_slot_var
 
-    root = Tk()
-    root.title('Réservation de Laboratoire')
-    root.geometry('600x600')  # Increased height to accommodate the legend
+    user_window = Tk()  # Renamed from root to user_window
+    user_window.title('Réservation de Laboratoire')
+    user_window.geometry('600x600')  # Increased height to accommodate the legend
 
     lab_id_var = StringVar()
     time_slot_var = StringVar()
 
-    Label(root, text="Choisissez le laboratoire").pack(pady=10)
+    Label(user_window, text="Choisissez le laboratoire").pack(pady=10)
 
     conn = sqlite3.connect('userdata.db')
     cursor = conn.cursor()
@@ -98,31 +121,31 @@ def create_ui():
 
     if not labs:
         messagebox.showwarning('Avertissement', 'Aucun laboratoire disponible')
-        root.destroy()
+        user_window.destroy()
         return
 
-    lab_menu = OptionMenu(root, lab_id_var, *labs)
+    lab_menu = OptionMenu(user_window, lab_id_var, *labs)
     lab_menu.pack(pady=10)
     lab_menu.config(width=20)
-    Label(root, text="(Sélectionnez un laboratoire pour voir les réservations)").pack(pady=5)
+    Label(user_window, text="(Sélectionnez un laboratoire pour voir les réservations)").pack(pady=5)
 
-    Label(root, text="Choisissez la date").pack(pady=10)
-    cal = Calendar(root, selectmode='day', date_pattern='yyyy-mm-dd')
+    Label(user_window, text="Choisissez la date").pack(pady=10)
+    cal = Calendar(user_window, selectmode='day', date_pattern='yyyy-mm-dd')
     cal.pack(pady=10)
 
-    Label(root, text="Choisissez le créneau horaire").pack(pady=10)
-    time_slot_menu = OptionMenu(root, time_slot_var, "08:00 - 12:00", "14:00 - 18:00")
+    Label(user_window, text="Choisissez le créneau horaire").pack(pady=10)
+    time_slot_menu = OptionMenu(user_window, time_slot_var, "08:00 - 12:00", "14:00 - 18:00")
     time_slot_menu.pack(pady=10)
     time_slot_menu.config(width=20)
 
-    book_button = Button(root, text="Réserver", command=book_lab)
+    book_button = Button(user_window, text="Réserver", command=book_lab)
     book_button.pack(pady=20)
 
     # Initial calendar update to show current reservation status
     update_calendar()
 
     # Add color legend
-    legend_frame = Frame(root)
+    legend_frame = Frame(user_window)
     legend_frame.pack(pady=20)
 
     Label(legend_frame, text="Legend:").grid(row=0, column=0, sticky=W, padx=10)
@@ -139,6 +162,6 @@ def create_ui():
         Label(legend_frame, text=description, bg=color, width=20).grid(row=0, column=col, pady=5, padx=10, sticky=W)
         col += 1
 
-    root.mainloop()
+    user_window.mainloop()  # Renamed from root.mainloop() to user_window.mainloop()
 
 create_ui()

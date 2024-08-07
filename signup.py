@@ -30,7 +30,7 @@ def connect_database():
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             email TEXT NOT NULL,
                             utilisateur TEXT NOT NULL,
-                            password TEXT NOT NULL
+                            password TEXT NOT NULL,  -- Added missing comma here
                             is_admin INTEGER DEFAULT 0
                         )''')
 
@@ -46,13 +46,13 @@ def validate_password(password):
     """Validates the password strength"""
     if len(password) < 8:
         return False
-    if not re.search(r"[A-Z]", password):
+    if not re.search(r'[A-Z]', password):
         return False
-    if not re.search(r"[a-z]", password):
+    if not re.search(r'[a-z]', password):
         return False
-    if not re.search(r"[0-9]", password):
+    if not re.search(r'[0-9]', password):
         return False
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+    if not re.search(r'[!@#$%^&*(),.?\":{}|<>]', password):
         return False
     return True
 
