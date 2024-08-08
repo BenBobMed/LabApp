@@ -10,7 +10,7 @@ def connect_database():
     password = passwordEntry.get()
     username = UsernameEntry.get()
     confirm_password = ConfirmEntry.get()
-
+#test
     if email == '' or password == '' or username == '' or confirm_password == '':
         messagebox.showerror('Erreur', 'Veuillez saisir vos informations')
     elif not email.endswith('@capgemini.com'):  # Check if email ends with '@capgemini.com'

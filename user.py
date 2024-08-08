@@ -231,7 +231,24 @@ def create_ui():
 
     update_calendar()
 
-    user_window.mainloop()
+    # Add color legend
+    legend_frame = Frame(user_window)
+    legend_frame.pack(pady=20)
 
-if __name__ == "__main__":
-    create_ui()
+    Label(legend_frame, text="Legend:").grid(row=0, column=0, sticky=W, padx=10)
+
+    colors = {
+        'green': '1 Lab Reserved',
+        'blue': '2 Labs Reserved',
+        'orange': '3 Labs Reserved',
+        'red': '4 Labs Reserved'
+    }
+
+    col = 1
+    for color, description in colors.items():
+        Label(legend_frame, text=description, bg=color, width=20).grid(row=0, column=col, pady=5, padx=10, sticky=W)
+        col += 1
+
+    user_window.mainloop()  # Renamed from root.mainloop() to user_window.mainloop()
+
+create_ui()
