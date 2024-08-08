@@ -1,6 +1,5 @@
 from tkinter import *
 from tkinter import ttk, messagebox
-from PIL import ImageTk, Image
 import sqlite3
 import os
 
@@ -129,10 +128,6 @@ def edit_product():
     save_button = Button(edit_window, text="Save", command=save_product)
     save_button.pack(pady=10)
 
-# Main window setup and other function definitions...
-
-
-
 def check_assets():
     # Clear any previous widgets from table_frame
     for widget in table_frame.winfo_children():
@@ -172,7 +167,6 @@ def check_assets():
         tree.insert('', 'end', values=result)
     
     tree.pack(expand=True, fill='both')
-
 
 def check_lab():
     # Clear any previous widgets from table_frame
@@ -215,7 +209,6 @@ def check_lab():
     finally:
         conn.close()
 
-
 def search():
     search_text = search_entry.get()
     search_type = search_combobox.get()
@@ -226,15 +219,11 @@ admin_window = Tk()
 admin_window.title("Admin Interface")
 admin_window.geometry('1000x600')  # Adjusted size for better layout
 
-# Load and set the background image
-current_dir = os.path.dirname(__file__)
-image_path = os.path.join(current_dir, 'bgn.jpg')
-background = ImageTk.PhotoImage(Image.open(image_path))
-bg_label = Label(admin_window, image=background)
-bg_label.place(relwidth=1, relheight=1)
+# Set the background color to blue
+admin_window.configure(bg='blue')
 
 # Buttons for different admin actions
-button_frame = Frame(admin_window, bg='white')
+button_frame = Frame(admin_window, bg='blue', bd=0)
 button_frame.grid(row=0, column=0, columnspan=4, padx=10, pady=10, sticky='ew')
 
 edit_users_btn = Button(button_frame, text="Edit users", command=edit_users, width=20)
@@ -250,7 +239,7 @@ check_lab_btn = Button(button_frame, text="Check Labo", command=check_lab, width
 check_lab_btn.grid(row=0, column=3, padx=5, pady=5, sticky='ew')
 
 # Search section
-search_frame = Frame(admin_window, bg='white')
+search_frame = Frame(admin_window, bg='blue', bd=0)
 search_frame.grid(row=1, column=0, columnspan=4, padx=10, pady=10, sticky='ew')
 
 search_entry = Entry(search_frame, width=30)

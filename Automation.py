@@ -9,4 +9,4 @@ def send_email_via_outlook(to, subject, body):
     mail.Send()
 
 # Example usage
-send_email_via_outlook('ibnboubakr.mohamed@gmail.com', 'Subject', 'This is the email body.')
+send_email_via_outlook('lahcenkhalifa12@gmail.com', 'Subject', 'This is the email body.')

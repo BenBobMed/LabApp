@@ -5,10 +5,12 @@ import sqlite3
 
 # Global variable to store authenticated email
 authenticated_email = None
+authenticated_id=None
 
 # Functionality Part
 def validate_login():
     global authenticated_email
+    global authenticated_id
     entered_email = usernameEntry.get()
     entered_password = passwordEntry.get()
 
@@ -27,17 +29,19 @@ def validate_login():
     else:
         user_id, email, utilisateur, password, is_admin = result
         authenticated_email = email  # Store the authenticated email
-        
+        authenticated_id=user_id
         messagebox.showinfo('Succès', f'Connexion réussie! Votre email est: {authenticated_email}')
-        login_window.destroy()
+        #login_window.destroy()
         
         # Here, you can add functionality to open different windows based on the role
         if is_admin:
+            login_window.destroy()
             import admin_interface  # Replace this with actual code to load admin interface
             admin_interface.show_admin_window()  # Assuming this is a function to show the admin window
         else:
-            import user_window  # Replace this with actual code to load normal user interface
-            user_window.show_user_window()  # Assuming this is a function to show the user window
+             login_window.destroy()
+             import materiel
+             materiel.create_ui()  # Ensure this matches the actual function name in your codes a function to show the user window
 
 # GUI Part
 def user_enter(event):
@@ -50,12 +54,12 @@ def password_enter(event):
 
 def hide():
     eyes.config(file='closeeyes.png')
-    passwordEntry.config(show='*')
+    passwordEntry.config(show='')
     eyeButton.config(command=show)
 
 def show():
     eyes.config(file='eyes.png')
-    passwordEntry.config(show='')
+    passwordEntry.config(show='*')
     eyeButton.config(command=hide)
 
 def signup_page():
