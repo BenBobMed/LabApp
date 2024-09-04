@@ -179,7 +179,7 @@ def create_ui():
 
     user_window = Tk()  # Initialize the main window
     user_window.title('Réservation de Laboratoire')
-    user_window.geometry('800x1000')  # Increase window size to accommodate enlarged elements
+    user_window.geometry('1000x1000')  # Increase window size to accommodate enlarged elements
 
     lab_id_var = StringVar()
     time_slot_var = StringVar()
