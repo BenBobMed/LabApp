@@ -2,15 +2,12 @@ from tkinter import *
 from tkinter import messagebox
 from PIL import ImageTk
 import sqlite3
+import globals  # Import the globals module
+import Test  # Import the Test module
 
-# Global variable to store authenticated email
-authenticated_email = None
-authenticated_id=None
 
-# Functionality Part
 def validate_login():
-    global authenticated_email
-    global authenticated_id
+    # Reference the globals module
     entered_email = usernameEntry.get()
     entered_password = passwordEntry.get()
 
@@ -28,10 +25,13 @@ def validate_login():
         messagebox.showerror('Erreur', 'Email ou mot de passe incorrect. Veuillez réessayer.')
     else:
         user_id, email, utilisateur, password, is_admin = result
-        authenticated_email = email  # Store the authenticated email
-        authenticated_id=user_id
-        messagebox.showinfo('Succès', f'Connexion réussie! Votre email est: {authenticated_email}')
-        #login_window.destroy()
+        globals.authenticated_email = email  # Set the global email
+        globals.authenticated_id = user_id    # Set the global ID
+
+        # Print the authenticated variables using the Test module
+        Test.print_authenticated_info()
+
+        messagebox.showinfo('Succès', f'Connexion réussie! Votre email est: {globals.authenticated_email}')
         
         # Here, you can add functionality to open different windows based on the role
         if is_admin:
@@ -39,9 +39,9 @@ def validate_login():
             import admin_interface  # Replace this with actual code to load admin interface
             admin_interface.show_admin_window()  # Assuming this is a function to show the admin window
         else:
-             login_window.destroy()
-             import button
-             button.create_ui()  # Ensure this matches the actual function name in your codes a function to show the user window
+            login_window.destroy()
+            import button
+            button.create_ui()  # Ensure this matches the actual function name in your code
 
 # GUI Part
 def user_enter(event):
